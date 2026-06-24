@@ -592,35 +592,39 @@ tr:nth-child(even) td{background-color:var(--surface)}
     // ═══════════════════════════════════════════════════════════
     //  ÍCONES ${ICO.nome} (aproximação para o preview)
     // ═══════════════════════════════════════════════════════════
+    // Mapa real de produção. processIcons() insere o SVG cru no lugar de
+    // ${ICO.nome}; o markup ao redor (.inline-ico / .ic) fornece tamanho e cor.
     const ICO = {
-      _fallback: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="2"/></svg>',
-      down:  '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7" stroke-width="2"/></svg>',
-      right: '<svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7" stroke-width="2"/></svg>',
-      alert: '<svg viewBox="0 0 24 24"><path d="M12 3 2 20h20L12 3zM12 9v5M12 17h.01" stroke-width="2"/></svg>',
-      check: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="2"/><path d="M8 12l3 3 5-6" stroke-width="2"/></svg>',
-      cross: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="2"/><path d="M9 9l6 6M15 9l-6 6" stroke-width="2"/></svg>',
-      clock: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="2"/><path d="M12 7v5l3 3" stroke-width="2"/></svg>',
-      heart: '<svg viewBox="0 0 24 24"><path d="M12 21s-7-4.5-9.5-9C1 9 3 5 6.5 5 9 5 12 8 12 8s3-3 5.5-3C21 5 23 9 21.5 12 19 16.5 12 21 12 21z" stroke-width="2"/></svg>',
-      brain: '<svg viewBox="0 0 24 24"><path d="M9 4a3 3 0 0 0-3 3 3 3 0 0 0-1 5 3 3 0 0 0 2 5 3 3 0 0 0 6 0V4a2 2 0 0 0-2 0z" stroke-width="2"/></svg>',
-      lungs: '<svg viewBox="0 0 24 24"><path d="M12 4v8M8 12c-3 0-4 3-4 6 0 2 4 2 4-1zM16 12c3 0 4 3 4 6 0 2-4 2-4-1z" stroke-width="2"/></svg>',
-      shield:'<svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-4 8-8 9-4-1-8-4-8-9V6l8-3z" stroke-width="2"/></svg>',
-      note:  '<svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2" stroke-width="2"/><path d="M8 8h8M8 12h8M8 16h5" stroke-width="2"/></svg>',
-      temp:  '<svg viewBox="0 0 24 24"><path d="M12 14V5a2 2 0 0 1 4 0v9a4 4 0 1 1-4 0z" stroke-width="2"/></svg>',
-      baby:  '<svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="5" stroke-width="2"/><path d="M9 8h.01M15 8h.01M9.5 11c1 1 4 1 5 0M5 20c1-3 4-4 7-4s6 1 7 4" stroke-width="2"/></svg>',
-      start: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-width="2"/><path d="M10 8l6 4-6 4z" stroke-width="2"/></svg>',
-      pill:  '<svg viewBox="0 0 24 24"><rect x="3" y="9" width="18" height="6" rx="3" stroke-width="2"/><path d="M12 9v6" stroke-width="2"/></svg>',
-      drop:  '<svg viewBox="0 0 24 24"><path d="M12 3s6 7 6 11a6 6 0 1 1-12 0c0-4 6-11 6-11z" stroke-width="2"/></svg>',
-      bolt:  '<svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" stroke-width="2"/></svg>',
-      lock:  '<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" stroke-width="2"/></svg>',
-      sun:   '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" stroke-width="2"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1 1M18 18l1 1M19 5l-1 1M6 18l-1 1" stroke-width="2"/></svg>',
-      moon:  '<svg viewBox="0 0 24 24"><path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z" stroke-width="2"/></svg>',
-      wave:  '<svg viewBox="0 0 24 24"><path d="M2 10c2-2 4-2 6 0s4 2 6 0 4-2 6 0M2 16c2-2 4-2 6 0s4 2 6 0 4-2 6 0" stroke-width="2"/></svg>',
-      celebrate: '<svg viewBox="0 0 24 24"><path d="M3 21l6-14 8 8-14 6zM14 3l1 2M19 8l2 1M16 5l3-1" stroke-width="2"/></svg>'
+      down: `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path fill="currentColor" d="M11 4v12.175l-5.6-5.6L4 12l8 8 8-8-1.4-1.425-5.6 5.6V4z"/></svg>`,
+      right: `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 6l6 6-6 6"/></svg>`,
+      alert: `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path fill="currentColor" d="M12.713 16.713Q13 16.425 13 16t-.288-.712T12 15t-.712.288T11 16t.288.713T12 17t.713-.288m0-4Q13 12.425 13 12V8q0-.425-.288-.712T12 7t-.712.288T11 8v4q0 .425.288.713T12 13t.713-.288M8.65 20H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12t.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5t.738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737t-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5t-.737-.15t-.663-.425z"/></svg>`,
+      check: `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path fill="currentColor" d="m10.95 14 4.95-4.95-1.425-1.4-3.525 3.525L9.525 9.75 8.1 11.175zM5 21V5q0-.825.588-1.412T7 3h10q.825 0 1.413.588T19 5v16l-7-3z"/></svg>`,
+      cross: `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="m9 9 6 6m0-6-6 6"/></svg>`,
+      clock: `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path fill="currentColor" d="m14.55 16.55 1.4-1.425-2.95-2.95V8h-2v5zM11 6h2V4h-2zm7 7h2v-2h-2zm-7 7h2v-2h-2zm-7-7h2v-2H4zm8 9q-2.075 0-3.9-.788t-3.175-2.137T2.788 15.9T2 12t.788-3.9t2.137-3.175T8.1 2.788T12 2t3.9.788t3.175 2.137T21.213 8.1T22 12t-.788 3.9t-2.137 3.175t-3.175 2.138T12 22"/></svg>`,
+      pill: `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path fill="currentColor" d="m16.7 15.275 2.65-2.675q.8-.8 1.225-1.825T21 8.625q0-2.35-1.637-3.988T15.375 3q-1.125 0-2.15.425T11.4 4.65L8.725 7.3zM8.625 21q1.125 0 2.15-.425T12.6 19.35l2.675-2.65L7.3 8.725 4.65 11.4q-.8.8-1.225 1.825T3 15.375q0 2.35 1.638 3.987T8.625 21"/></svg>`,
+      drop: `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path fill="currentColor" d="m12 15 4-4H8zm0 7q-2.075 0-3.9-.788t-3.175-2.137T2.788 15.9T2 12t.788-3.9t2.137-3.175T8.1 2.788T12 2t3.9.788t3.175 2.137T21.213 8.1T22 12t-.788 3.9t-2.137 3.175t-3.175 2.138T12 22"/></svg>`,
+      heart: `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path fill="currentColor" d="M14.8 14.525q1.225-.975 1.575-2.525H14.3q-.3.675-.925 1.088T12 13.5t-1.375-.413T9.7 12H7.625q.35 1.55 1.575 2.525t2.8.975 2.8-.975m-4.662-4.387q.362-.363.362-.888t-.363-.888T9.25 8t-.888.363T8 9.25t.363.888t.887.362.888-.363m5.5 0Q16 9.776 16 9.25t-.363-.888T14.75 8t-.888.363t-.362.887.363.888.887.362.888-.363M12 21l-1.45-1.25q-2.525-2.2-4.175-3.8T3.75 13.075t-1.362-2.35T2 8.5q0-2.35 1.575-3.925T7.5 3q1.3 0 2.475.55T12 5.1q.85-1 2.025-1.55T16.5 3q2.35 0 3.925 1.575T22 8.5q0 1.15-.387 2.225t-1.363 2.35-2.625 2.875-4.175 3.8z"/></svg>`,
+      brain: `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4.5a3 3 0 0 0-3 3v.4A3 3 0 0 0 4.5 11v1a3 3 0 0 0 1.7 2.7A3 3 0 0 0 9 19.5h1.5v-15Z"/><path d="M15 4.5a3 3 0 0 1 3 3v.4A3 3 0 0 1 19.5 11v1a3 3 0 0 1-1.7 2.7A3 3 0 0 1 15 19.5h-1.5v-15Z"/></svg>`,
+      lungs: `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v8"/><path d="M12 11c-1.5-2-3-2.5-4.5-1.5C5 11 4 14 4.5 17c.4 2.3 2.4 3 3.5 1.5.8-1 1.5-3.5 1.5-5.5"/><path d="M12 11c1.5-2 3-2.5 4.5-1.5C19 11 20 14 19.5 17c-.4 2.3-2.4 3-3.5 1.5-.8-1-1.5-3.5-1.5-5.5"/></svg>`,
+      shield: `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path fill="currentColor" d="M10 16h4q.425 0 .713-.288T15 15v-3q0-.425-.288-.712T14 11v-1q0-.825-.587-1.412T12 8t-1.412.588T10 10v1q-.425 0-.712.288T9 12v3q0 .425.288.713T10 16m1-5v-1q0-.425.288-.712T12 9t.713.288T13 10v1zm.675 10.875q-.15-.025-.3-.075Q8 20.675 6 17.637T4 11.1V6.375q0-.625.363-1.125t.937-.725l6-2.25q.35-.125.7-.125t.7.125l6 2.25q.575.225.938.725T20 6.375V11.1q0 3.5-2 6.538T12.625 21.8q-.15.05-.3.075T12 21.9t-.325-.025"/></svg>`,
+      note: `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3.5" width="14" height="17" rx="2.5"/><path d="M9 8h6M9 12h6M9 16h3.5"/></svg>`,
+      temp: `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 14.5V5a2 2 0 1 0-4 0v9.5a4 4 0 1 0 4 0Z"/><path d="M12 9h2.5"/></svg>`,
+      baby: `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4.5"/><path d="M4.5 20.5c0-4 3.4-6 7.5-6s7.5 2 7.5 6"/></svg>`,
+      start: `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M10 8.5 15.5 12 10 15.5Z"/></svg>`,
+      sun: `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M4.5 12H2M22 12h-2.5M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8"/></svg>`,
+      lock: `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M7.5 10.5V7a4.5 4.5 0 0 1 9 0v3.5"/></svg>`,
+      bolt: `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 2.5 4 13.5h6l-1 8 8.5-11h-6l1-8Z"/></svg>`,
+      moon: `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z"/></svg>`,
+      wave: `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 11V5.5a1.5 1.5 0 0 1 3 0V10"/><path d="M10 10V4.5a1.5 1.5 0 0 1 3 0V10"/><path d="M13 10.5V6a1.5 1.5 0 0 1 3 0v6"/><path d="M16 8.5a1.5 1.5 0 0 1 3 0v4a7 7 0 0 1-7 7h-.5a6.5 6.5 0 0 1-4.6-1.9l-3.2-3.2a1.5 1.5 0 0 1 2.1-2.1L7 13"/></svg>`,
+      celebrate: `<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 20.5 5.5-13L16 15Z"/><path d="M14 7.5a3 3 0 0 0-1-4M17 4.5a3.5 3.5 0 0 1 4 1"/><path d="M19 11.5h.01M16 2.5h.01M21 8.5h.01"/></svg>`,
+      adjustments: `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none" /><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 10a2 2 0 1 0 4 0a2 2 0 0 0-4 0m2-6v4m0 4v8m4-4a2 2 0 1 0 4 0a2 2 0 0 0-4 0m2-12v10m0 4v2m4-13a2 2 0 1 0 4 0a2 2 0 0 0-4 0m2-3v1m0 4v11" /></svg>`,
+      arrow_down: `<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none" /><path fill="currentColor" d="M12 10a1 1 0 0 1 1 1v7.584l1.293-1.291a1 1 0 0 1 1.32-.083l.094.083a1 1 0 0 1 0 1.414l-3 3a1 1 0 0 1-.112.097l-.11.071l-.114.054l-.105.035l-.149.03L12 22l-.075-.003l-.126-.017l-.111-.03l-.111-.044l-.098-.052l-.096-.067l-.09-.08l-3-3a1 1 0 0 1 1.414-1.414L11 18.586V11a1 1 0 0 1 1-1m0-8a3 3 0 1 1-3 3l.005-.176A3 3 0 0 1 12 2" /></svg>`
     };
 
+    // Idêntico ao processIcons() de produção: insere o SVG cru; nome
+    // desconhecido vira string vazia.
     function resolveIco(html) {
-      return String(html).replace(/\$\{ICO\.(\w+)\}/g, (m, name) =>
-        '<span class="inline-ico">' + (ICO[name] || ICO._fallback) + '</span>');
+      return String(html).replace(/\$\{ICO\.([a-zA-Z0-9_]+)\}/g, (_m, name) => ICO[name] || '');
     }
 
     // ═══════════════════════════════════════════════════════════
