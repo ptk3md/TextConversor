@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Editor MedEstudo – Blocos</title>
+  <style>
+    /* Estilo mínimo funcional – sem foco em beleza */
+    body { font-family: system-ui, sans-serif; max-width: 960px; margin: 0 auto; padding: 20px; }
+    #metadata { background: #f5f5f5; padding: 16px; border-radius: 8px; margin-bottom: 20px; }
+    #metadata label { display: block; margin-top: 8px; font-weight: bold; }
+    #metadata input, #metadata textarea { width: 100%; max-width: 400px; padding: 6px; margin-top: 4px; }
+    #chips-editor { margin-top: 12px; }
+    .chip-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
+    .chip-row select, .chip-row input { padding: 4px; }
+    button { padding: 8px 16px; cursor: pointer; }
+    #editorjs { background: white; border: 1px solid #ddd; padding: 20px; border-radius: 8px; min-height: 300px; }
+    pre { background: #222; color: #eee; padding: 16px; border-radius: 6px; white-space: pre-wrap; max-height: 400px; overflow: auto; }
+  </style>
+</head>
+<body>
+  <h1>Editor de Temas – MedEstudo</h1>
+
+  <!-- METADADOS DO TEMA -->
+  <div id="metadata">
+    <label>Número (n): <input id="num" type="number" value="1"></label>
+    <label>ID (slug): <input id="slug" type="text" placeholder="ex: reanimacao-neonatal"></label>
+    <label>Disciplina: <input id="disc" type="text" placeholder="ex: Pediatria"></label>
+    <label>Categoria (cat): <input id="cat" type="text" placeholder="EX: NEONATOLOGIA"></label>
+    <label>Título: <input id="title" type="text"></label>
+    <label>Trecho para destaque (mark): <input id="mark" type="text"></label>
+    <label>Lede (resumo): <textarea id="lede" rows="2"></textarea></label>
+
+    <div id="chips-editor">
+      <strong>Chips (1 a 5):</strong>
+      <div id="chip-list"></div>
+      <button type="button" onclick="addChip()">+ Adicionar chip</button>
+    </div>
+  </div>
+
+  <h2>Conteúdo das Seções (Editor de Blocos)</h2>
+  <div id="editorjs"></div>
+
+  <button id="export" style="margin-top:20px">📦 Exportar JSON MedEstudo</button>
+  <pre id="output" style="display:none"></pre>
+
+  <!-- Carregamento das bibliotecas (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.28.2/dist/editorjs.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.7.0/dist/bundle.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/list@1.8.0/dist/bundle.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/table@2.2.1/dist/bundle.js"></script>
+
+  <script>
+    // ─── Ferramentas Customizadas ──────────────────────────────
+
+    // Callout (note, warn, tip, key)
+    class CalloutTool {
+      static get toolbox() {
+        return { title: 'Callout', icon: '<svg width="17" height="15" viewBox="0 0 17 15"><rect x="1" y="1" width="15" height="13" rx="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>' };
+      }
+      constructor({ data }) {
+        this.data = { type: data.type || 'note', text: data.text || '' };
+      }
+      render() {
+        const wrapper = document.createElement('div');
+        wrapper.style.border = '2px solid #ccc';
+        wrapper.style.padding = '8px';
+        wrapper.style.borderRadius = '6px';
+
+        const sel = document.createElement('select');
+        ['note','warn','tip','key'].forEach(t => {
+          const opt = document.createElement('option');
+          opt.value = t; opt.textContent = t.charAt(0).toUpperCase() + t.slice(1);
+          sel.appendChild(opt);
+        });
+        sel.value = this.data.type;
+        sel.addEventListener('change', () => { this.data.type = sel.value; });
+
+        const content = document.createElement('div');
+        content.contentEditable = 'true';
+        content.innerHTML = this.data.text;
+        content.style.minHeight = '40px';
+        content.addEventListener('input', () => { this.data.text = content.innerHTML; });
+
+        wrapper.appendChild(sel);
+        wrapper.appendChild(content);
+        return wrapper;
+      }
+      save() {
+        return { type: this.data.type, text: this.data.text };
+      }
+    }
+
+    // Lista estilizada (tip, warn, normal)
+    class StyledListTool {
+      static get toolbox() {
+        return { title: 'Lista estilizada', icon: '<svg width="17" height="15"><circle cx="6" cy="7.5" r="2.5" fill="currentColor"/><line x1="11" y1="7.5" x2="16" y2="7.5" stroke="currentColor" stroke-width="2"/></svg>' };
+      }
+      constructor({ data }) {
+        this.data = { style: data.style || 'normal', items: data.items || [] };
+        if (!Array.isArray(this.data.items)) this.data.items = [];
+      }
+      render() {
+        const wrapper = document.createElement('div');
+
+        const sel = document.createElement('select');
+        ['normal','tip','warn'].forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s; opt.textContent = s;
+          sel.appendChild(opt);
+        });
+        sel.value = this.data.style;
+        sel.addEventListener('change', () => { this.data.style = sel.value; });
+
+        const textarea = document.createElement('textarea');
+        textarea.placeholder = 'Um item por linha';
+        textarea.value = this.data.items.join('\n');
+        textarea.style.width = '100%';
+        textarea.rows = 5;
+        textarea.addEventListener('input', () => {
+          this.data.items = textarea.value.split('\n').filter(line => line.trim() !== '');
+        });
+
+        wrapper.appendChild(sel);
+        wrapper.appendChild(textarea);
+        return wrapper;
+      }
+      save() {
+        return { style: this.data.style, items: this.data.items };
+      }
+    }
+
+    // Card de elemento (estilo tabela periódica)
+    class ElementCardTool {
+      static get toolbox() {
+        return { title: 'Card (.el)', icon: '<svg width="17" height="15"><rect x="2" y="2" width="13" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="2"/></svg>' };
+      }
+      constructor({ data }) {
+        this.data = Object.assign({ ab:'X', lab:'Label', barWidth:70, barColor:'var(--salmon)', desc:'', pills:[] }, data);
+      }
+      render() {
+        const wrapper = document.createElement('div');
+        wrapper.style.display = 'grid';
+        wrapper.style.gap = '8px';
+        wrapper.style.gridTemplateColumns = '1fr 1fr';
+
+        const createInput = (label, key, type='text') => {
+          const lbl = document.createElement('label');
+          lbl.textContent = label+': ';
+          const inp = document.createElement('input');
+          inp.type = type;
+          inp.value = this.data[key];
+          inp.addEventListener('input', () => { this.data[key] = type==='number' ? Number(inp.value) : inp.value; });
+          lbl.appendChild(inp);
+          return lbl;
+        };
+
+        wrapper.appendChild(createInput('Símbolo', 'ab'));
+        wrapper.appendChild(createInput('Rótulo', 'lab'));
+        wrapper.appendChild(createInput('Barra %', 'barWidth', 'number'));
+        wrapper.appendChild(createInput('Cor barra', 'barColor'));
+        wrapper.appendChild(createInput('Descrição', 'desc'));
+        // pills (simplificado: lista separada por vírgulas)
+        const pillsLabel = document.createElement('label');
+        pillsLabel.textContent = 'Pills (separados por vírgula): ';
+        const pillsInput = document.createElement('input');
+        pillsInput.value = this.data.pills.join(', ');
+        pillsInput.addEventListener('input', () => {
+          this.data.pills = pillsInput.value.split(',').map(s => s.trim()).filter(Boolean);
+        });
+        pillsLabel.appendChild(pillsInput);
+        wrapper.appendChild(pillsLabel);
+
+        return wrapper;
+      }
+      save() {
+        return { ...this.data };
+      }
+    }
+
+    // HTML Bruto (para fluxogramas, etc.)
+    class RawHTMLTool {
+      static get toolbox() {
+        return { title: 'HTML Bruto', icon: '<svg width="17" height="15"><text x="2" y="12" font-size="12" fill="currentColor">&lt;/&gt;</text></svg>' };
+      }
+      constructor({ data }) {
+        this.data = { html: data.html || '' };
+      }
+      render() {
+        const wrapper = document.createElement('div');
+        const textarea = document.createElement('textarea');
+        textarea.placeholder = 'Cole o HTML aqui (ex: <div class="flowchart">...</div>)';
+        textarea.value = this.data.html;
+        textarea.style.width = '100%';
+        textarea.rows = 10;
+        textarea.addEventListener('input', () => { this.data.html = textarea.value; });
+        wrapper.appendChild(textarea);
+        return wrapper;
+      }
+      save() {
+        return { html: this.data.html };
+      }
+    }
+
+    // ─── Inicialização do Editor ──────────────────────────────
+    const editor = new EditorJS({
+      holder: 'editorjs',
+      tools: {
+        header: {
+          class: Header,
+          inlineToolbar: true,
+          config: { placeholder: 'Título da seção', levels: [2] }
+        },
+        paragraph: {
+          class: Paragraph,
+          inlineToolbar: true
+        },
+        table: {
+          class: Table,
+          inlineToolbar: true
+        },
+        callout: {
+          class: CalloutTool,
+          inlineToolbar: false
+        },
+        styledList: {
+          class: StyledListTool,
+          inlineToolbar: false
+        },
+        elementCard: {
+          class: ElementCardTool,
+          inlineToolbar: false
+        },
+        rawHTML: {
+          class: RawHTMLTool,
+          inlineToolbar: false
+        }
+      },
+      placeholder: 'Comece a escrever ou pressione + para adicionar um bloco...'
+    });
+
+    // ─── Gerenciamento de Chips (metadados) ───────────────────
+    const chipsContainer = document.getElementById('chip-list');
+    function addChip(cor='y', b='', s='') {
+      const row = document.createElement('div');
+      row.className = 'chip-row';
+      row.innerHTML = `
+        <select class="chip-c">
+          <option value="y" ${cor==='y'?'selected':''}>Amarelo</option>
+          <option value="l" ${cor==='l'?'selected':''}>Lavanda</option>
+          <option value="s" ${cor==='s'?'selected':''}>Salmão</option>
+          <option value="g" ${cor==='g'?'selected':''}>Sage</option>
+          <option value="p" ${cor==='p'?'selected':''}>Pêssego</option>
+        </select>
+        <input class="chip-b" placeholder="Título" value="${escapeHtml(b)}">
+        <input class="chip-s" placeholder="Subtítulo" value="${escapeHtml(s)}">
+        <button type="button" onclick="this.parentElement.remove()">✕</button>
+      `;
+      chipsContainer.appendChild(row);
+    }
+    // Adiciona 3 chips vazios por padrão
+    if (chipsContainer.children.length === 0) {
+      addChip('y'); addChip('l'); addChip('s');
+    }
+
+    // ─── Exportar ─────────────────────────────────────────────
+    document.getElementById('export').addEventListener('click', async () => {
+      const output = await editor.save();
+
+      // Coleta metadados
+      const theme = {
+        n: parseInt(document.getElementById('num').value) || 1,
+        id: document.getElementById('slug').value.trim(),
+        disciplina: document.getElementById('disc').value.trim(),
+        cat: document.getElementById('cat').value.trim().toUpperCase(),
+        title: document.getElementById('title').value,
+        mark: document.getElementById('mark').value,
+        lede: document.getElementById('lede').value,
+        chips: Array.from(chipsContainer.children).map(row => ({
+          c: row.querySelector('.chip-c').value,
+          b: row.querySelector('.chip-b').value,
+          s: row.querySelector('.chip-s').value
+        })),
+        sections: []
+      };
+
+      // Converte blocos em seções
+      const blocks = output.blocks;
+      let currentSection = null;
+      let sectionIndex = 0;
+
+      for (const block of blocks) {
+        if (block.type === 'header') {
+          if (currentSection) theme.sections.push(currentSection);
+          currentSection = {
+            eyebrow: `Seção ${String(++sectionIndex).padStart(2,'0')}`,
+            title: block.data.text,
+            html: ''
+          };
+        } else {
+          if (!currentSection) {
+            // Se não houver header antes, cria uma seção genérica
+            currentSection = { eyebrow: `Seção ${String(++sectionIndex).padStart(2,'0')}`, title: 'Introdução', html: '' };
+          }
+          currentSection.html += convertBlockToHTML(block);
+        }
+      }
+      if (currentSection) theme.sections.push(currentSection);
+
+      // Exibe o JSON
+      document.getElementById('output').style.display = 'block';
+      document.getElementById('output').textContent = JSON.stringify(theme, null, 2);
+
+      // Download automático (opcional)
+      const blob = new Blob([JSON.stringify(theme, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${theme.id || 'tema'}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    function convertBlockToHTML(block) {
+      switch (block.type) {
+        case 'paragraph':
+          return `<p>${block.data.text}</p>`;
+        case 'callout':
+          return `<div class="callout ${block.data.type}"><span class="ct">${block.data.type.toUpperCase()}</span>${block.data.text}</div>`;
+        case 'styledList':
+          const styleClass = block.data.style === 'normal' ? 'list' : `list ${block.data.style}`;
+          const items = block.data.items.map(item => `<li>${item}</li>`).join('');
+          return `<ul class="${styleClass}">${items}</ul>`;
+        case 'table':
+          // Editor.js table salva content como array 2D; convertemos para HTML
+          let tableHTML = '<div class="tablewrap"><table>';
+          const content = block.data.content || [];
+          for (const row of content) {
+            tableHTML += '<tr>';
+            for (const cell of row) {
+              tableHTML += '<td>' + cell + '</td>';
+            }
+            tableHTML += '</tr>';
+          }
+          tableHTML += '</table></div>';
+          return tableHTML;
+        case 'elementCard':
+          const d = block.data;
+          const pills = d.pills.map(p => `<span class="pill up">${escapeHtml(p)}</span>`).join('');
+          return `<div class="el"><div class="ab">${escapeHtml(d.ab)}</div><div class="lab">${escapeHtml(d.lab)}</div><div class="bar"><i style="width:${d.barWidth}%;background:${d.barColor}"></i></div><div class="desc">${d.desc}</div>${pills ? '<div class="pills">'+pills+'</div>' : ''}</div>`;
+        case 'rawHTML':
+          return block.data.html;
+        default:
+          return '';
+      }
+    }
+
+    function escapeHtml(text) {
+      return String(text).replace(/[&<>"]/g, function(m) {
+        return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[m];
+      });
+    }
+  </script>
+</body>
+</html>
